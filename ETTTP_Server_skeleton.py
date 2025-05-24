@@ -26,7 +26,13 @@ if __name__ == '__main__':
         ###################################################################
         # Send start move information to peer
     
-        start_send=f"SEND ETTTP/1.0 \r\nHost: {MY_IP}\r\nStart: {start}\r\n\r\n"
+        if start==0:
+            first_move='ME'
+        else:
+            first_move='YOU'
+
+        start_send=f"SEND ETTTP/1.0 \r\nHost: {MY_IP} \r\nFirst-Move: {first_move} \r\n\r\n"
+        
         client_socket.send(start_send.encode()) 
     
         ######################### Fill Out ################################
