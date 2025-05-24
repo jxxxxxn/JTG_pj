@@ -350,8 +350,23 @@ def check_msg(msg, recv_ip):
     '''
     ###################  Fill Out  #######################
 
-    
+    lines=msg.splitlines() #message를 줄 단위로 나누어서 
 
+    if len(lines)<2:
+        return False
+    
+    if not (lines[0].startswith("ACK ETTTP/1.0") or lines[0].startswith("SEND ETTTP/1.0")):
+        return False
+    
+    for line in lines: #매 line마다 확인 
+        if line.startswith("Host:"): #First-Move: 로 시작하는 line을 찾아서 
+            host=line.split(":")[1].strip() #':'로 나눈 리스트에서 두 번째 요소를 꺼내고 공백 제거 
+    
+    if host!=recv_ip:
+        return False
+    
+    if not msg.endswith("\r\n\r\n"):
+        return False
 
     return True
     ######################################################  

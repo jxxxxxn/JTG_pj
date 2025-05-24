@@ -36,14 +36,24 @@ if __name__ == '__main__':
         lines=start_send.splitlines() #받은 message를 줄 단위로 나누어서 
 
         for line in lines: #매 line마다 확인 
-            if line.startswith("Start:"): #Start: 로 시작하는 line을 찾아서 
-                start=int(line.split(":")[1].strip()) #':'로 나눈 리스트에서 두 번째 요소를 꺼내고 공백 제거, int형으로 변환 
+            if line.startswith("First-Move:"): #First-Move: 로 시작하는 line을 찾아서 
+                start_str=line.split(":")[1].strip() #':'로 나눈 리스트에서 두 번째 요소를 꺼내고 공백 제거 
                 break
+        
+        if start_str=='ME':
+            start=0
+        else:
+            start=1
 
         ######################### Fill Out ################################
         # Send ACK 
         
-        start_ack=f"ACK ETTTP/1.0 \r\nHost:{MY_IP}\r\nStart:{start}\r\n\r\n"
+        if start==0:
+            first_move='YOU'
+        else:
+            first_move='ME'
+
+        start_ack=f"ACK ETTTP/1.0 \r\nHost:{MY_IP} \r\nFirst-Move: {first_move} \r\n\r\n"
         client_socket.send(start_ack.encode())
         
         ###################################################################
