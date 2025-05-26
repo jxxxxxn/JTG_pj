@@ -6,11 +6,7 @@ import _thread
 
 SIZE=1024
 
-# 메모: 공백제거 추가하기
-
 class TTT(tk.Tk):
-    # server: root = TTT(client=False,target_socket=client_socket, src_addr=MY_IP,dst_addr=client_addr[0] (클라이언트 IP))
-    # client: root = TTT(target_socket=client_socket, src_addr=MY_IP,dst_addr=SERVER_IP)
 
 # TTT.__init__: GUI 창 생성, 게임 시작 직전 초기화
     def __init__(self, target_socket,src_addr,dst_addr, client=True):
@@ -222,6 +218,7 @@ class TTT(tk.Tk):
         If is not, close socket and quit
         '''
         ###################  Fill Out  #######################
+        print("get_move 함수 실행됨\n")
         msg = self.socket.recv(1024).decode() # get message using socket
         # socket.recv(1024): 상대 소켓이 보낸 최대 1024 바이트의 데이터를 받아옴
         # .decode(): 바이트 -> 문자열 디코딩
@@ -235,6 +232,7 @@ class TTT(tk.Tk):
         
         if not msg_valid_check: # Message is not valid -> 프로그램 종료
             self.socket.close()
+            print("msg is not valid")
             self.quit()
             return
         else:  # If message is valid - send ack, update board and change turn
@@ -246,6 +244,7 @@ class TTT(tk.Tk):
             # send ack
             low_ack = f"ACK ETTTP/1.0\r\nHost:{self.send_ip}\r\nNew-Move:({row},{col})\r\n\r\n"
             self.socket.send(low_ack.encode())
+            print("상대방의 move msg에 대한 ACK를 보냄\n")
             ######################################################   
             
             #vvvvvvvvvvvvvvvvvvv  DO NOT CHANGE  vvvvvvvvvvvvvvvvvvv
@@ -268,21 +267,22 @@ class TTT(tk.Tk):
             return
         # get message from the input box
         d_msg = self.t_debug.get(1.0,"end")      # 텍스트박스 내용 읽음
-        d_msg = d_msg.replace("\\r\\n","\r\n")   # msg is sanitized as \r\n is modified when it is given as input
+        d_msg = d_msg.replace("\\r\\n","\r\n")[:-1]   # msg is sanitized as \r\n is modified when it is given as input
         self.t_debug.delete(1.0,"end")           # 텍스트박스 초기화
         
         ###################  Fill Out  #######################
         '''
         Check if the selected location is already taken or not
         '''
-        # 디버그 메시지도 체크를 해야 하나?
         if not check_msg(d_msg, self.recv_ip):
-            self.t_debug.delete(1.0,"end") 
+            print("wrong msg")
             return
 
-        row = d_msg.find('(') + 1
-        col = d_msg.find(')') - 1
+        print("send_debug 함수 실행됨, check_msg 통과\n")
+        row = int(d_msg[d_msg.find('(') + 1])
+        col = int(d_msg[d_msg.find(')') - 1])
         loc = row*3 + col
+        print("debug msg에 적혀 있는 위치:", row, col, loc)
         if loc not in self.remaining_moves:
             print("already selected location")
             self.t_debug.delete(1.0,"end")
@@ -292,6 +292,7 @@ class TTT(tk.Tk):
         Send message to peer
         '''
         self.socket.send(d_msg.encode())
+        print("debug msg 전송됨")
         
         '''
         Get ack
@@ -300,7 +301,9 @@ class TTT(tk.Tk):
         # ack을 못 받거나 invalid하면
         if not check_msg(ack, self.recv_ip):
             print("wrong ack")
+            self.socket.close()
             quit()
+        print("전송한 debug msg에 대한 ACK 받음\n")
 
         ######################################################  
         
@@ -327,12 +330,15 @@ class TTT(tk.Tk):
         # send message and check ACK
         row_msg = f"SEND ETTTP/1.0\r\nHost:{self.send_ip}\r\nNew-Move:({row},{col})\r\n\r\n"
         self.socket.send(row_msg.encode())
+        print("버튼을 눌러 메시지를 보냄")
 
         # check ACK
         ack = self.socket.recv(1024).decode()
         if not check_msg(ack, self.recv_ip):
             print("wrong ack")
+            self.socket.close()
             quit()
+        print("내 메시지에 대한 상대측의 ack 받음")
         
         return True
         ######################################################  
@@ -342,10 +348,10 @@ class TTT(tk.Tk):
         '''
         Function to check if the result between peers are same
         get: if it is false, it means this user is winner and need to report the result first
-        get: check_result를 받은 사람?
         '''
         # no skeleton
         ###################  Fill Out  #######################
+        print("check_result 함수 실행됨\n")
         if not get:
             win = "ME"
         else:
