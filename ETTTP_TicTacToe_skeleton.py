@@ -264,6 +264,7 @@ class TTT(tk.Tk):
 
         if not self.my_turn:                     # 나의 턴이 아니라면
             self.t_debug.delete(1.0,"end")       # 텍스트박스 내용 삭제 후 함수 return 
+            print("not my turn!!")
             return
         # get message from the input box
         d_msg = self.t_debug.get(1.0,"end")      # 텍스트박스 내용 읽음
@@ -434,30 +435,30 @@ class TTT(tk.Tk):
 
 # End of Root class
 
-def check_msg(msg, recv_ip):
+def check_msg(msg, recv_ip): # ETTTP 형식인지 체크하는 함수 
     '''
     Function that checks if received message is ETTTP format
     '''
     ###################  Fill Out  #######################
 
-    lines=msg.splitlines() #message를 줄 단위로 나누어서 
+    lines=msg.splitlines() # message를 줄 단위로 나누어서 
 
-    if len(lines)<2:
-        return False
+    if len(lines)<2: # 만약 msg가 2줄보다 적다면 (즉, SEND ETTTP/1.0만 왔다면)
+        return False # ETTTP 형식 x 
     
     if not (lines[0].startswith("ACK ETTTP/1.0") or lines[0].startswith("SEND ETTTP/1.0")
-        or lines[0].startswith("RESULT ETTTP/1.0")): ## RESULT msg 검사 추가
-        return False
+        or lines[0].startswith("RESULT ETTTP/1.0")): # msg의 첫 번째 줄 검사, 3가지 경우가 아니라면 
+        return False # ETTTP 형식 x 
     
-    for line in lines: #매 line마다 확인 
-        if line.startswith("Host:"): #Host: 로 시작하는 line을 찾아서
-            host=line.split(":")[1].strip() #':'로 나눈 리스트에서 두 번째 요소를 꺼내고 공백 제거 
+    for line in lines: # 매 line마다 확인 
+        if line.startswith("Host:"): # Host: 로 시작하는 line을 찾아서
+            host=line.split(":")[1].strip() # ':'로 나눈 리스트에서 두 번째 요소를 꺼내고 공백 제거 
     
-    if host!=recv_ip:
-        return False
+    if host!=recv_ip: # host와 상대방 IP가 같지 않으면 
+        return False # ETTTP 형식 x 
     
-    if not msg.endswith("\r\n\r\n"):
-        return False
+    if not msg.endswith("\r\n\r\n"): # \r\n\r\n으로 끝나지 않으면  
+        return False # ETTTP 형식 x 
 
-    return True
+    return True # ETTTP 형식 o
     ######################################################  
