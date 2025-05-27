@@ -218,34 +218,38 @@ class TTT(tk.Tk):
         If is not, close socket and quit
         '''
         ###################  Fill Out  #######################
-        print("get_move 함수 실행됨\n")
-        msg = self.socket.recv(1024).decode() # get message using socket
+        print("get_move 함수 실행됨\n") 
+
+        msg = self.socket.recv(1024).decode() # 소켓을 이용해 메시지를 받음
         # socket.recv(1024): 상대 소켓이 보낸 최대 1024 바이트의 데이터를 받아옴
         # .decode(): 바이트 -> 문자열 디코딩
 
         # msg valid checking: 메시지가 ETTTP 형식에 맞는지 검사
         print(f"[DEBUG] Received message: {msg}")
-        msg_valid_check = False
+        msg_valid_check = False             # 메시지 유효성 검사 전 msg_valid_check 변수를 False로 초기화
 
+        # check_msg 함수를 이용해 peer msg가 ETTTP 형식에 맞는지 검사
         if check_msg(msg, self.recv_ip):
-            msg_valid_check = True
+            msg_valid_check = True          # ETTTP 형식에 맞다면 msg_valid_check = True
         
-        if not msg_valid_check: # Message is not valid -> 프로그램 종료
-            self.socket.close()
-            print("msg is not valid")
-            self.quit()
-            return
-        else:  # If message is valid - send ack, update board and change turn
-            # next location update
-            row = int(msg[msg.find('(') + 1])
-            col = int(msg[msg.find(')') - 1])
-            loc = row*3 + col # received next-move
+        # Message is not valid -> 프로그램 종료
+        if not msg_valid_check:
+            self.socket.close()             # 소켓 close
+            print("msg is not valid")       # 디버깅용 메시지 - 프로그램 종료 이유: 유효하지 않은 메시지
+            self.quit()                     # 게임 종료, GUI 창 닫기
+        # If message is valid - send ack, update board and change turn
+        else:
+            # next location update in "New-Move:( , )"
+            row = int(msg[msg.find('(') + 1])   # '('의 다음에 위치한 문자가 row 위치를 나타냄
+            col = int(msg[msg.find(')') - 1])   # ')'의 이전에 위치한 문자가 col 위치를 나타냄
+            loc = row*3 + col                   # calculate received next-move
 
-            # send ack
+            # ETTTP 형식에 맞추어 ETTTP response message(ACK) 전송
             low_ack = f"ACK ETTTP/1.0\r\nHost:{self.send_ip}\r\nNew-Move:({row},{col})\r\n\r\n"
             self.socket.send(low_ack.encode())
+
             print("상대방의 move msg에 대한 ACK를 보냄\n")
-            ######################################################   
+        #########################################################   
             
             #vvvvvvvvvvvvvvvvvvv  DO NOT CHANGE  vvvvvvvvvvvvvvvvvvv
             self.update_board(self.computer, loc, get=True)
@@ -275,35 +279,40 @@ class TTT(tk.Tk):
         '''
         Check if the selected location is already taken or not
         '''
+
+        # 디버깅 메시지로 전송받은 메시지가 ETTTP 형식에 맞는지 검사
         if not check_msg(d_msg, self.recv_ip):
-            print("wrong msg")
+            print("wrong msg")                  # 맞지 않다면 "wrong msg" 출력 후 함수 종료
             return
 
+        # d_msg에 적혀 있는 위치로 이동
         print("send_debug 함수 실행됨, check_msg 통과\n")
-        row = int(d_msg[d_msg.find('(') + 1])
-        col = int(d_msg[d_msg.find(')') - 1])
-        loc = row*3 + col
+        row = int(d_msg[d_msg.find('(') + 1])   # '('의 다음에 위치한 문자가 row 위치를 나타냄
+        col = int(d_msg[d_msg.find(')') - 1])   # ')'의 이전에 위치한 문자가 col 위치를 나타냄
+        loc = row*3 + col                       # row와 col 값을 이용해 이동 위치 계산
         print("debug msg에 적혀 있는 위치:", row, col, loc)
+
+        # 이동하려는 loc 위치의 칸이 '남은 칸' 리스트에 없다면
         if loc not in self.remaining_moves:
             print("already selected location")
-            self.t_debug.delete(1.0,"end")
-            return
+            return                              # 이동하지 않고 함수 리턴
 
         '''
         Send message to peer
         '''
+        # d_msg가 ETTTP 형식 검사도 통과하고, loc으로 이동 가능한 상태라면 peer에게 메시지 전송
         self.socket.send(d_msg.encode())
         print("debug msg 전송됨")
         
         '''
         Get ack
         '''
+        # 보낸 d_msg에 대한 peer의 response message(ACK) 받기
         ack =  self.socket.recv(1024).decode()
-        # ack을 못 받거나 invalid하면
-        if not check_msg(ack, self.recv_ip):
+        if not check_msg(ack, self.recv_ip):    # ACK를를 못 받거나 invalid한 ACK라면
             print("wrong ack")
-            self.socket.close()
-            quit()
+            self.socket.close()                 # 소켓 close
+            quit()                              # 게임 종료
         print("전송한 debug msg에 대한 ACK 받음\n")
 
         ######################################################  
@@ -328,20 +337,20 @@ class TTT(tk.Tk):
         row,col = divmod(selection,3)
         ###################  Fill Out  #######################
 
-        # send message and check ACK
+        # ETTTP 형식에 맞추어 ETTTP request message(SEND) 전송
         row_msg = f"SEND ETTTP/1.0\r\nHost:{self.send_ip}\r\nNew-Move:({row},{col})\r\n\r\n"
         self.socket.send(row_msg.encode())
         print("버튼을 눌러 메시지를 보냄")
 
-        # check ACK
+        # 보낸 메시지에 대한 peer의 response message(ACK) 받기
         ack = self.socket.recv(1024).decode()
-        if not check_msg(ack, self.recv_ip):
+        if not check_msg(ack, self.recv_ip):        # ack을 못 받거나 invalid한 ACK라면
             print("wrong ack")
-            self.socket.close()
-            quit()
+            self.socket.close()                     # 소켓 close
+            quit()                                  # 게임 종료
         print("내 메시지에 대한 상대측의 ack 받음")
         
-        return True
+        return True                                 # move 메시지 전송을 무사히 마침: True 반환
         ######################################################  
 
     
@@ -353,43 +362,39 @@ class TTT(tk.Tk):
         # no skeleton
         ###################  Fill Out  #######################
         print("check_result 함수 실행됨\n")
-        if not get:
-            win = "ME"
-        else:
+        if not get:         # winner = 게임 오버를 먼저 발견하고 Result Poll 메시지를 보내는 host
+            win = "ME"      # 본인이 winner
+        else:               # loser = 상대가 이겨서 게임 오버를 나중에 발견하고 Result Poll 메시지를 받은 뒤 보내는 host
             win = "YOU"
         
-        # send RESULT msg
+        # ETTTP 형식에 맞추어 ETTTP result message(RESULT) 전송
         result_msg = f"RESULT ETTTP/1.0\r\nHost:{self.send_ip}\r\nWinner:{win}\r\n\r\n"
 
         if not get:
-            # get=False인 경우 메시지를 먼저 전송
-            self.socket.send(result_msg.encode())
+            self.socket.send(result_msg.encode())   # RESULT POLL: get=False인 경우 메시지를 먼저 전송 
 
-            # wait peeer's result msg
+            # wait peer's result msg
             peer_msg = self.socket.recv(1024).decode()
         else:
             # wait peer's result msg
             peer_msg = self.socket.recv(1024).decode()
 
-            # 다음 send msg
-            self.socket.send(result_msg.encode())
+            self.socket.send(result_msg.encode())   # 상대방의 메시지를 받은 뒤 RESULT POLL
 
-        if not check_msg(peer_msg, self.recv_ip): # msg format check
-                self.socket.close()
-                quit()
+        if not check_msg(peer_msg, self.recv_ip):   # result msg가 invalid하다면
+                self.socket.close()                 # 소켓 close
+                quit()                              # 게임 종료
         
-        # peer의 RESULT 파싱
+        # peer의 RESULT 메시지 파싱
         print("[DEBUG]: peer msg is "+peer_msg)
-        peer_result_index = peer_msg.find("Winner:") # find where winner locates
+        peer_result_index = peer_msg.find("Winner:")        # find where "Winner" locates
         peer_result = peer_msg[peer_result_index+7:].split("\r\n")[0].strip() # {win}이 적힌 문자열 추출
 
         # compare RESULT msg
-        if peer_result == win:
-            return False
+        if peer_result == win:      # 서로의 Result Message 내용을 비교하고,
+            return False            # (Winner=YOU)=(Winner=YOU), ME=ME 등으로 서로 다른 결과로 판단했다면 False 반환
 
-        # ACK 주고받기를 해야 할까?
-
-        return True
+        return True                 # 두 peer간 Result Message가 같은 Winner를 가리키고 있다면 True 반환
         ######################################################  
 
         
