@@ -218,7 +218,7 @@ class TTT(tk.Tk):
         If is not, close socket and quit
         '''
         ###################  Fill Out  #######################
-        print("get_move 함수 실행됨\n") 
+        print("상대방의 턴을 기다리는 중...\n") 
 
         msg = self.socket.recv(1024).decode() # 소켓을 이용해 메시지를 받음
         # socket.recv(1024): 상대 소켓이 보낸 최대 1024 바이트의 데이터를 받아옴
@@ -248,7 +248,7 @@ class TTT(tk.Tk):
             low_ack = f"ACK ETTTP/1.0\r\nHost:{self.send_ip}\r\nNew-Move:({row},{col})\r\n\r\n"
             self.socket.send(low_ack.encode())
 
-            print("상대방의 move msg에 대한 ACK를 보냄\n")
+            print("상대방의 move msg에 대한 ACK를 보냄\n============================")
         #########################################################   
             
             #vvvvvvvvvvvvvvvvvvv  DO NOT CHANGE  vvvvvvvvvvvvvvvvvvv
@@ -294,7 +294,7 @@ class TTT(tk.Tk):
 
         # 이동하려는 loc 위치의 칸이 '남은 칸' 리스트에 없다면
         if loc not in self.remaining_moves:
-            print("already selected location")
+            print("already selected location\n============================")
             return                              # 이동하지 않고 함수 리턴
 
         '''
@@ -313,7 +313,7 @@ class TTT(tk.Tk):
             print("wrong ack")
             self.socket.close()                 # 소켓 close
             quit()                              # 게임 종료
-        print("전송한 debug msg에 대한 ACK 받음\n")
+        print("전송한 debug msg에 대한 ACK 받음\n============================")
 
         ######################################################  
         
@@ -340,7 +340,7 @@ class TTT(tk.Tk):
         # ETTTP 형식에 맞추어 ETTTP request message(SEND) 전송
         row_msg = f"SEND ETTTP/1.0\r\nHost:{self.send_ip}\r\nNew-Move:({row},{col})\r\n\r\n"
         self.socket.send(row_msg.encode())
-        print("버튼을 눌러 메시지를 보냄")
+        print("버튼을 눌러 메시지를 보냄\n")
 
         # 보낸 메시지에 대한 peer의 response message(ACK) 받기
         ack = self.socket.recv(1024).decode()
@@ -348,7 +348,7 @@ class TTT(tk.Tk):
             print("wrong ack")
             self.socket.close()                     # 소켓 close
             quit()                                  # 게임 종료
-        print("내 메시지에 대한 상대측의 ack 받음")
+        print("내 메시지에 대한 상대측의 ack 받음\n============================")
         
         return True                                 # move 메시지 전송을 무사히 마침: True 반환
         ######################################################  
